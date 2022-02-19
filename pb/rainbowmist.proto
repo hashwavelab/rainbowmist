@@ -1,0 +1,27 @@
+syntax = "proto3";
+
+option go_package = "./rainbowmist";
+
+package rainbowmist;
+
+// The Wallet service definition.
+service Rainbowmist {
+    rpc GetPrice (GetPriceRequest) returns (GetPriceReply) {}
+    rpc GetUSDPrice (GetUSDPriceRequest) returns (GetPriceReply) {}
+}
+
+message GetPriceRequest {
+    string base_asset = 1;
+    string quote_asset = 2;
+    string decimals = 3;
+}
+
+message GetUSDPriceRequest {
+    string asset = 1;
+    string decimals = 2;
+}
+
+message GetPriceReply {
+    string price = 1;
+    bool status = 2;
+}
