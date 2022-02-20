@@ -32,7 +32,7 @@ func NewRainbowmistClient(cc grpc.ClientConnInterface) RainbowmistClient {
 
 func (c *rainbowmistClient) GetPrice(ctx context.Context, in *GetPriceRequest, opts ...grpc.CallOption) (*GetPriceReply, error) {
 	out := new(GetPriceReply)
-	err := c.cc.Invoke(ctx, "/Rainbowmist/GetPrice", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/rainbowmist.Rainbowmist/GetPrice", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -41,7 +41,7 @@ func (c *rainbowmistClient) GetPrice(ctx context.Context, in *GetPriceRequest, o
 
 func (c *rainbowmistClient) GetUSDPrice(ctx context.Context, in *GetUSDPriceRequest, opts ...grpc.CallOption) (*GetPriceReply, error) {
 	out := new(GetPriceReply)
-	err := c.cc.Invoke(ctx, "/Rainbowmist/GetUSDPrice", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/rainbowmist.Rainbowmist/GetUSDPrice", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -90,7 +90,7 @@ func _Rainbowmist_GetPrice_Handler(srv interface{}, ctx context.Context, dec fun
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Rainbowmist/GetPrice",
+		FullMethod: "/rainbowmist.Rainbowmist/GetPrice",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RainbowmistServer).GetPrice(ctx, req.(*GetPriceRequest))
@@ -108,7 +108,7 @@ func _Rainbowmist_GetUSDPrice_Handler(srv interface{}, ctx context.Context, dec 
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/Rainbowmist/GetUSDPrice",
+		FullMethod: "/rainbowmist.Rainbowmist/GetUSDPrice",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RainbowmistServer).GetUSDPrice(ctx, req.(*GetUSDPriceRequest))
@@ -120,7 +120,7 @@ func _Rainbowmist_GetUSDPrice_Handler(srv interface{}, ctx context.Context, dec 
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var Rainbowmist_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "Rainbowmist",
+	ServiceName: "rainbowmist.Rainbowmist",
 	HandlerType: (*RainbowmistServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
