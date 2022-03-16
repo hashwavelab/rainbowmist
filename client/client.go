@@ -1,80 +1,127 @@
-/*
- *
- * Copyright 2015 gRPC authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- *
- */
-
-// Package main implements a client for Greeter service.
-package main
+package client
 
 import (
 	"context"
-	"log"
+	pb "rainbowmist/pb"
+	"strconv"
+	sync "sync"
 	"time"
 
-	pb "rainbowmist/pb"
-
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
-const (
-	address     = "localhost:8889"
-	defaultName = "piglet"
+var (
+	RPCTimeout               = time.Second * 2
+	SyncInterval             = time.Second * 5
+	TimeAllowedSinceLastSync = time.Second * 30
+	Decimals                 = "10"
 )
 
-func main() {
-	f2()
+type Oracle struct {
+	address           string
+	USDQuoteWatchList sync.Map //map[string]*USDQuote
 }
 
-func f1() {
-	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
-	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+type USDQuote struct {
+	sync.RWMutex
+	Asset    string
+	LastSync time.Time
+	Price    float64
+}
+
+func NewOracle(address string) *Oracle {
+	oracle := &Oracle{
+		address: address,
 	}
-	defer conn.Close()
-	c := pb.NewRainbowmistClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
-	defer cancel()
-	r, err := c.GetPrice(ctx, &pb.GetPriceRequest{
-		BaseAsset:  "ETH",
-		QuoteAsset: "BTC",
-		Decimals:   "10",
+	return oracle
+}
+
+func (_o *Oracle) AddUSDWatchPair(a string) {
+	_, ok := _o.USDQuoteWatchList.Load(a)
+	if ok {
+		return
+	}
+	_o.USDQuoteWatchList.Store(a, &USDQuote{Asset: a})
+}
+
+func (_o *Oracle) StartSyncing() {
+	go func() {
+		ticker := time.NewTicker(SyncInterval)
+		for range ticker.C {
+			go _o.syncWatchList()
+		}
+	}()
+}
+
+func (_o *Oracle) syncWatchList() {
+	_o.USDQuoteWatchList.Range(func(k, v interface{}) bool {
+		go _o.syncPrice(v.(*USDQuote))
+		return true
 	})
-	if err != nil {
-		log.Fatalf("could not greet: %v", err)
-	}
-	log.Printf("Received Reserve: %s", r)
 }
 
-func f2() {
-	// Set up a connection to the server.
-	conn, err := grpc.Dial(address, grpc.WithInsecure(), grpc.WithBlock())
+func (_o *Oracle) connect() (*grpc.ClientConn, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), RPCTimeout)
+	defer cancel()
+	conn, err := grpc.DialContext(ctx, _o.address, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
+	return conn, err
+}
+
+func (_o *Oracle) syncPrice(q *USDQuote) {
+	conn, err := _o.connect()
 	if err != nil {
-		log.Fatalf("did not connect: %v", err)
+		return
 	}
 	defer conn.Close()
 	c := pb.NewRainbowmistClient(conn)
-	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), RPCTimeout)
 	defer cancel()
 	r, err := c.GetUSDPrice(ctx, &pb.GetUSDPriceRequest{
-		Asset:    "ONE",
-		Decimals: "10",
+		Asset:    q.Asset,
+		Decimals: Decimals,
 	})
 	if err != nil {
-		log.Fatalf("could not greet: %v", err)
+		return
 	}
-	log.Printf("Received Reserve: %s", r)
+	if !r.Status {
+		return
+	}
+	price, _ := strconv.ParseFloat(r.Price, 64)
+	q.SetPrice(price)
+}
+
+func (_o *Oracle) GetUSDPrice(a string) (float64, bool) {
+	q, ok := _o.USDQuoteWatchList.Load(a)
+	if !ok {
+		return 0, false
+	}
+	quote := q.(*USDQuote)
+	return quote.GetPrice()
+}
+
+func (_o *Oracle) GetUSDPriceFunc(a string) (func() (float64, bool), bool) {
+	q, ok := _o.USDQuoteWatchList.Load(a)
+	if !ok {
+		return nil, false
+	}
+	quote := q.(*USDQuote)
+	return quote.GetPrice, true
+}
+
+func (_q *USDQuote) GetPrice() (float64, bool) {
+	_q.RLock()
+	defer _q.RUnlock()
+	if time.Since(_q.LastSync) <= TimeAllowedSinceLastSync {
+		return _q.Price, true
+	} else {
+		return 0, false
+	}
+}
+
+func (_q *USDQuote) SetPrice(price float64) {
+	_q.Lock()
+	defer _q.Unlock()
+	_q.LastSync = time.Now() //maybe get from rainbowmist instead // TODO, Implement this please!
+	_q.Price = price
 }
