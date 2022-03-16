@@ -5,9 +5,10 @@ import (
 	"fmt"
 	"log"
 	"net"
-	"rainbowmist/oracle"
 
-	pb "rainbowmist/pb"
+	"github.com/hashwavelab/rainbowmist/oracle"
+
+	"github.com/hashwavelab/rainbowmist/pb"
 
 	"google.golang.org/grpc"
 )

@@ -24,7 +24,7 @@ import (
 	"log"
 	"time"
 
-	pb "rainbowmist/pb"
+	"github.com/hashwavelab/rainbowmist/pb"
 
 	"google.golang.org/grpc"
 )

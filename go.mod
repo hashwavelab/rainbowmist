@@ -1,4 +1,4 @@
-module rainbowmist
+module github.com/hashwavelab/rainbowmist
 
 go 1.17
 

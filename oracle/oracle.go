@@ -3,9 +3,10 @@ package oracle
 import (
 	"errors"
 	"log"
-	"rainbowmist/connector"
 	"sync"
 	"time"
+
+	"github.com/hashwavelab/rainbowmist/connector"
 )
 
 type Oracle struct {

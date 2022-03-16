@@ -2,7 +2,8 @@ package main
 
 import (
 	"log"
-	"rainbowmist/oracle"
+
+	"github.com/hashwavelab/rainbowmist/oracle"
 )
 
 func main() {

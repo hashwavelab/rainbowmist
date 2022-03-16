@@ -2,10 +2,11 @@ package client
 
 import (
 	"context"
-	pb "rainbowmist/pb"
 	"strconv"
 	sync "sync"
 	"time"
+
+	"github.com/hashwavelab/rainbowmist/pb"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
