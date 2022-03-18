@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/hashwavelab/rainbowmist/pb"
+	"github.com/hashwavelab/rainbowmist/pix"
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
@@ -13,8 +14,8 @@ import (
 
 var (
 	RPCTimeout               = time.Second * 2
-	SyncInterval             = time.Second * 5
-	TimeAllowedSinceLastSync = time.Second * 30
+	SyncInterval             = time.Second * 2
+	TimeAllowedSinceLastSync = time.Second * 15
 )
 
 type Oracle struct {
@@ -48,16 +49,19 @@ func (_o *Oracle) StartSyncing() {
 	go func() {
 		ticker := time.NewTicker(SyncInterval)
 		for range ticker.C {
-			go _o.syncWatchList()
+			_o.syncWatchList()
 		}
 	}()
 }
 
 func (_o *Oracle) syncWatchList() {
+	var wg sync.WaitGroup
 	_o.USDQuoteWatchList.Range(func(k, v interface{}) bool {
-		go _o.syncPrice(v.(*USDQuote))
+		wg.Add(1)
+		go _o.syncPrice(v.(*USDQuote), wg)
 		return true
 	})
+	wg.Wait()
 }
 
 func (_o *Oracle) connect() (*grpc.ClientConn, error) {
@@ -67,7 +71,8 @@ func (_o *Oracle) connect() (*grpc.ClientConn, error) {
 	return conn, err
 }
 
-func (_o *Oracle) syncPrice(q *USDQuote) {
+func (_o *Oracle) syncPrice(q *USDQuote, wg sync.WaitGroup) {
+	defer wg.Done()
 	conn, err := _o.connect()
 	if err != nil {
 		return
@@ -116,6 +121,10 @@ func (_q *USDQuote) GetPrice() (float64, bool) {
 func (_q *USDQuote) SetPrice(price float64) {
 	_q.Lock()
 	defer _q.Unlock()
+	ok := pix.PriceSenseCheck(price)
+	if !ok {
+		return
+	}
 	_q.LastSync = time.Now() //maybe get from rainbowmist instead // TODO, Implement this please!
 	_q.Price = price
 }

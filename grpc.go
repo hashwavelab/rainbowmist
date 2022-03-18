@@ -7,6 +7,7 @@ import (
 	"net"
 
 	"github.com/hashwavelab/rainbowmist/oracle"
+	"github.com/hashwavelab/rainbowmist/pix"
 
 	"github.com/hashwavelab/rainbowmist/pb"
 
@@ -22,15 +23,8 @@ type server struct {
 	Oracle *oracle.Oracle
 }
 
-func priceSenseCheck(price float64) bool {
-	if price < 1.0/1000000000.0 || price > 1000000000.0 {
-		return false
-	}
-	return true
-}
-
 func constructGetPriceReply(price float64) (*pb.GetPriceReply, error) {
-	if ok := priceSenseCheck(price); !ok {
+	if ok := pix.PriceSenseCheck(price); !ok {
 		return nil, errors.New("price sense check failed")
 	}
 	return &pb.GetPriceReply{Price: price}, nil

@@ -16,7 +16,9 @@ type PairConstant struct {
 func (_p *PairConstant) getPriceOf(a string) (float64, error) {
 	_p.RLock()
 	defer _p.RUnlock()
-	if a == _p.BaseAsset {
+	if _p.Price == 0 {
+		return 0, errors.New("price is 0")
+	} else if a == _p.BaseAsset {
 		return _p.Price, nil
 	} else if a == _p.QuoteAsset {
 		return 1 / _p.Price, nil
