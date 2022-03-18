@@ -2,7 +2,6 @@ package client
 
 import (
 	"context"
-	"strconv"
 	sync "sync"
 	"time"
 
@@ -16,7 +15,6 @@ var (
 	RPCTimeout               = time.Second * 2
 	SyncInterval             = time.Second * 5
 	TimeAllowedSinceLastSync = time.Second * 30
-	Decimals                 = "10"
 )
 
 type Oracle struct {
@@ -79,17 +77,12 @@ func (_o *Oracle) syncPrice(q *USDQuote) {
 	ctx, cancel := context.WithTimeout(context.Background(), RPCTimeout)
 	defer cancel()
 	r, err := c.GetUSDPrice(ctx, &pb.GetUSDPriceRequest{
-		Asset:    q.Asset,
-		Decimals: Decimals,
+		Asset: q.Asset,
 	})
 	if err != nil {
 		return
 	}
-	if !r.Status {
-		return
-	}
-	price, _ := strconv.ParseFloat(r.Price, 64)
-	q.SetPrice(price)
+	q.SetPrice(r.Price)
 }
 
 func (_o *Oracle) GetUSDPrice(a string) (float64, bool) {

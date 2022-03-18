@@ -51,7 +51,6 @@ func f1() {
 	r, err := c.GetPrice(ctx, &pb.GetPriceRequest{
 		BaseAsset:  "ETH",
 		QuoteAsset: "BTC",
-		Decimals:   "10",
 	})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
@@ -70,8 +69,7 @@ func f2() {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	r, err := c.GetUSDPrice(ctx, &pb.GetUSDPriceRequest{
-		Asset:    "ONE",
-		Decimals: "10",
+		Asset: "ONE",
 	})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)

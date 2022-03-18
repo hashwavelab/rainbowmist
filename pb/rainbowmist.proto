@@ -13,15 +13,12 @@ service Rainbowmist {
 message GetPriceRequest {
     string base_asset = 1;
     string quote_asset = 2;
-    string decimals = 3;
 }
 
 message GetUSDPriceRequest {
     string asset = 1;
-    string decimals = 2;
 }
 
 message GetPriceReply {
-    string price = 1;
-    bool status = 2;
+    double price = 1;
 }

@@ -2,6 +2,7 @@ package oracle
 
 import (
 	"errors"
+	"log"
 	"sync"
 )
 
@@ -34,5 +35,18 @@ func (_p *PairAtObex) getWeight() (float64, error) {
 func (_p *PairAtObex) update(p float64) {
 	_p.Lock()
 	defer _p.Unlock()
+	// make sure only a sensible price can be stored
+	ok := priceSenseCheck(p)
+	if !ok {
+		log.Println("Update price failed sense check ERROR!!", _p.Weight, _p.BaseAsset, _p.QuoteAsset, p)
+		return
+	}
 	_p.Price = p
+}
+
+func priceSenseCheck(price float64) bool {
+	if price < 1.0/1000000000.0 || price > 1000000000.0 {
+		return false
+	}
+	return true
 }

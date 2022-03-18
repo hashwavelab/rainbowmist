@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"errors"
 	"log"
 	"net"
 
@@ -22,22 +22,34 @@ type server struct {
 	Oracle *oracle.Oracle
 }
 
+func priceSenseCheck(price float64) bool {
+	if price < 1.0/1000000000.0 || price > 1000000000.0 {
+		return false
+	}
+	return true
+}
+
+func constructGetPriceReply(price float64) (*pb.GetPriceReply, error) {
+	if ok := priceSenseCheck(price); !ok {
+		return nil, errors.New("price sense check failed")
+	}
+	return &pb.GetPriceReply{Price: price}, nil
+}
+
 func (s *server) GetPrice(ctx context.Context, in *pb.GetPriceRequest) (*pb.GetPriceReply, error) {
 	p, err := s.Oracle.GetPrice(in.BaseAsset, in.QuoteAsset)
 	if err != nil {
-		return &pb.GetPriceReply{Status: false}, nil
+		return nil, errors.New("get price failed")
 	}
-	pString := fmt.Sprintf("%."+in.Decimals+"f", p)
-	return &pb.GetPriceReply{Price: pString, Status: true}, nil
+	return constructGetPriceReply(p)
 }
 
 func (s *server) GetUSDPrice(ctx context.Context, in *pb.GetUSDPriceRequest) (*pb.GetPriceReply, error) {
 	p, err := s.Oracle.GetUSDPrice(in.Asset)
 	if err != nil {
-		return &pb.GetPriceReply{Status: false}, nil
+		return nil, errors.New("get price failed")
 	}
-	pString := fmt.Sprintf("%."+in.Decimals+"f", p)
-	return &pb.GetPriceReply{Price: pString, Status: true}, nil
+	return constructGetPriceReply(p)
 }
 
 func InitGrpcServer(oracle *oracle.Oracle) {

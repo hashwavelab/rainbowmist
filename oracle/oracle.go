@@ -7,12 +7,15 @@ import (
 	"time"
 
 	"github.com/hashwavelab/rainbowmist/connector"
+	"github.com/hashwavelab/rainbowmist/pix"
+	"go.uber.org/zap"
 )
 
 type Oracle struct {
 	sync.RWMutex
 	MapLock sync.RWMutex
 	Map     map[string]*Pair
+	logger  *zap.Logger
 }
 
 type NewPairRecipe struct {
@@ -32,7 +35,8 @@ type NewPairSourceRecipe struct {
 
 func NewOracle() *Oracle {
 	o := &Oracle{
-		Map: make(map[string]*Pair),
+		Map:    make(map[string]*Pair),
+		logger: pix.NewLogger("/oracle.log"),
 	}
 	return o
 }
@@ -142,9 +146,9 @@ func (_o *Oracle) GetPrice(a0, a1 string) (float64, error) {
 	if !ok {
 		return 0, errors.New("pair not found")
 	}
-	//p, _ := pair.GetPriceOf(a0)
-	//log.Println(a0, a1, pairKey, p)
-	return pair.GetPriceOf(a0)
+	price, err := pair.GetPriceOf(a0)
+	_o.logger.Info("get price", zap.String("baseAsset", a0), zap.String("quoteAsset", a1), zap.Float64("price", price))
+	return price, err
 }
 
 func (_o *Oracle) GetUSDPrice(a string) (float64, error) {
@@ -155,6 +159,7 @@ func (_o *Oracle) GetUSDPrice(a string) (float64, error) {
 			if err != nil {
 				return 0, errors.New("pair not found")
 			}
+			_o.logger.Info("get USD price", zap.String("asset", a), zap.Float64("price", price1))
 			return price1, nil
 		}
 		price1, err1 := _o.GetPrice(a, "USDT")
@@ -169,8 +174,10 @@ func (_o *Oracle) GetUSDPrice(a string) (float64, error) {
 		if err != nil {
 			return 0, errors.New("pair not found")
 		}
+		_o.logger.Info("get USD price", zap.String("asset", a), zap.Float64("price", price1*price2*price3))
 		return price1 * price2 * price3, nil
 	} else {
+		_o.logger.Info("get USD price", zap.String("asset", a), zap.Float64("price", price0))
 		return price0, nil
 	}
 }
