@@ -2,7 +2,6 @@ package oracle
 
 import (
 	"errors"
-	"log"
 	"sync"
 )
 
@@ -17,7 +16,9 @@ type PairAtObex struct {
 func (_p *PairAtObex) getPriceOf(a string) (float64, error) {
 	_p.RLock()
 	defer _p.RUnlock()
-	if a == _p.BaseAsset {
+	if _p.Price == 0 {
+		return 0, errors.New("price is 0")
+	} else if a == _p.BaseAsset {
 		return _p.Price, nil
 	} else if a == _p.QuoteAsset {
 		return 1 / _p.Price, nil
@@ -38,7 +39,6 @@ func (_p *PairAtObex) update(p float64) {
 	// make sure only a sensible price can be stored
 	ok := priceSenseCheck(p)
 	if !ok {
-		log.Println("Update price failed sense check ERROR!!", _p.Weight, _p.BaseAsset, _p.QuoteAsset, p)
 		return
 	}
 	_p.Price = p
