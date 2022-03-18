@@ -55,7 +55,7 @@ func (_o *Oracle) StartSyncing() {
 }
 
 func (_o *Oracle) syncWatchList() {
-	var wg sync.WaitGroup
+	wg := &sync.WaitGroup{}
 	_o.USDQuoteWatchList.Range(func(k, v interface{}) bool {
 		wg.Add(1)
 		go _o.syncPrice(v.(*USDQuote), wg)
@@ -71,7 +71,7 @@ func (_o *Oracle) connect() (*grpc.ClientConn, error) {
 	return conn, err
 }
 
-func (_o *Oracle) syncPrice(q *USDQuote, wg sync.WaitGroup) {
+func (_o *Oracle) syncPrice(q *USDQuote, wg *sync.WaitGroup) {
 	defer wg.Done()
 	conn, err := _o.connect()
 	if err != nil {
