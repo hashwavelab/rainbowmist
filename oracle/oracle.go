@@ -109,12 +109,12 @@ func (_o *Oracle) initConstant() {
 	pair1 := _o.GetNewPair("USDC", "USD")
 	pair1.SetupPairAtOneSource(sourceName, "constant", "USDC", "USD", 100)
 	pair1.Update(sourceName, constantPriceOne)
-	// for avalanche native USDC.e and USDT.e (Bridged Coins from ETH)
-	pair2 := _o.GetNewPair("USDC.e", "USD")
-	pair2.SetupPairAtOneSource(sourceName, "constant", "USDC.e", "USD", 100)
+	// for avalanche native USDCe and USDTe (Bridged Coins from ETH)
+	pair2 := _o.GetNewPair("USDCe", "USD")
+	pair2.SetupPairAtOneSource(sourceName, "constant", "USDCe", "USD", 100)
 	pair2.Update(sourceName, constantPriceOne)
-	pair3 := _o.GetNewPair("USDT.e", "USDT")
-	pair3.SetupPairAtOneSource(sourceName, "constant", "USDT.e", "USDT", 100)
+	pair3 := _o.GetNewPair("USDTe", "USDT")
+	pair3.SetupPairAtOneSource(sourceName, "constant", "USDTe", "USDT", 100)
 	pair3.Update(sourceName, constantPriceOne)
 }
 
