@@ -101,12 +101,21 @@ func (_o *Oracle) initKucoin() {
 
 func (_o *Oracle) initConstant() {
 	sourceName := "constant"
+	constantPriceOne := 1.0
+	// Set all USDC, BUSD equivalent to USD (This relies on FTX)
 	pair := _o.GetNewPair("BUSD", "USD")
 	pair.SetupPairAtOneSource(sourceName, "constant", "BUSD", "USD", 100)
-	pair.Update(sourceName, 1)
+	pair.Update(sourceName, constantPriceOne)
 	pair1 := _o.GetNewPair("USDC", "USD")
 	pair1.SetupPairAtOneSource(sourceName, "constant", "USDC", "USD", 100)
-	pair1.Update(sourceName, 1)
+	pair1.Update(sourceName, constantPriceOne)
+	// for avalanche native USDC.e and USDT.e (Bridged Coins from ETH)
+	pair2 := _o.GetNewPair("USDC.e", "USD")
+	pair2.SetupPairAtOneSource(sourceName, "constant", "USDC.e", "USD", 100)
+	pair2.Update(sourceName, constantPriceOne)
+	pair3 := _o.GetNewPair("USDT.e", "USDT")
+	pair3.SetupPairAtOneSource(sourceName, "constant", "USDT.e", "USDT", 100)
+	pair3.Update(sourceName, constantPriceOne)
 }
 
 func (_o *Oracle) GetNewPair(a0, a1 string) *Pair {
