@@ -69,7 +69,7 @@ func f2() {
 	ctx, cancel := context.WithTimeout(context.Background(), 1*time.Second)
 	defer cancel()
 	r, err := c.GetUSDPrice(ctx, &pb.GetUSDPriceRequest{
-		Asset: "ONE",
+		Asset: "BNB",
 	})
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)

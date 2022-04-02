@@ -23,7 +23,7 @@ func NewPair() *Pair {
 	return pair
 }
 
-func (_p *Pair) SetupPairAtOneSource(sourceName, sourceType, baseAsset, quoteAsset string, weight float64) {
+func (_p *Pair) SetupPair(sourceName, sourceType, baseAsset, quoteAsset string, weight float64) {
 	_p.Lock()
 	defer _p.Unlock()
 	switch sourceType {
@@ -41,6 +41,19 @@ func (_p *Pair) SetupPairAtOneSource(sourceName, sourceType, baseAsset, quoteAss
 			QuoteAsset: quoteAsset,
 		}
 		_p.Map[sourceName] = ps
+	}
+}
+
+func (_p *Pair) SetupPoolAtChain(sourceName, sourceURL, sourceType, dexType, poolAddress, a0, a1 string, a0d, a1d, weight float64) {
+	_p.Lock()
+	defer _p.Unlock()
+	switch sourceType {
+	case "chain-evm":
+		switch dexType {
+		case "univ2":
+			pool := NewPairAtUniV2(sourceURL, poolAddress, a0, a1, a0d, a1d, weight)
+			_p.Map[sourceName] = pool
+		}
 	}
 }
 

@@ -42,18 +42,19 @@ func NewOracle() *Oracle {
 }
 
 func (_o *Oracle) Init() {
-	_o.initBinance()
-	_o.initKucoin()
+	_o.initBinance(80)
+	_o.initKucoin(20)
+	_o.initChainPairs()
 	_o.initConstant()
 }
 
-func (_o *Oracle) initBinance() {
+func (_o *Oracle) initBinance(weight float64) {
 	sourceName := "binance"
 	bc := connector.NewBinanceConnector()
 	infos, _ := bc.GetExchangeInfo()
 	for _, info := range infos {
 		pair := _o.GetNewPair(info.BaseAsset, info.QuoteAsset)
-		pair.SetupPairAtOneSource(sourceName, "obex_spot", info.BaseAsset, info.QuoteAsset, 8)
+		pair.SetupPair(sourceName, "obex_spot", info.BaseAsset, info.QuoteAsset, weight)
 	}
 	ticker := time.NewTicker(3 * time.Second)
 	go func() {
@@ -73,13 +74,13 @@ func (_o *Oracle) initBinance() {
 	}()
 }
 
-func (_o *Oracle) initKucoin() {
+func (_o *Oracle) initKucoin(weight float64) {
 	sourceName := "kucoin"
 	bc := connector.NewKucoinConnector()
 	infos, _ := bc.GetExchangeInfo()
 	for _, info := range infos {
 		pair := _o.GetNewPair(info.BaseAsset, info.QuoteAsset)
-		pair.SetupPairAtOneSource(sourceName, "obex_spot", info.BaseAsset, info.QuoteAsset, 2)
+		pair.SetupPair(sourceName, "obex_spot", info.BaseAsset, info.QuoteAsset, weight)
 	}
 	ticker := time.NewTicker(3 * time.Second)
 	go func() {
@@ -99,22 +100,35 @@ func (_o *Oracle) initKucoin() {
 	}()
 }
 
+func (_o *Oracle) initChainPairs() {
+	// DefaultChainPairSyncPeriod := 30 * time.Second
+	// pair := _o.GetNewPair("JEWEL", "USD")
+	// pair.SetupPoolAtChain("harmony", "URL_PH", "chain-evm", "univ2", "0xA1221A5BBEa699f507CC00bDedeA05b5d2e32Eba", "JEWEL", "USDC", 18, 6, 1)
+	// go func() {
+	// 	pair.Update("harmony", 0)
+	// 	ticker := time.NewTicker(DefaultChainPairSyncPeriod)
+	// 	for range ticker.C {
+	// 		pair.Update("harmony", 0)
+	// 	}
+	// }()
+}
+
 func (_o *Oracle) initConstant() {
 	sourceName := "constant"
 	constantPriceOne := 1.0
 	// Set all USDC, BUSD equivalent to USD (This relies on FTX)
 	pair := _o.GetNewPair("BUSD", "USD")
-	pair.SetupPairAtOneSource(sourceName, "constant", "BUSD", "USD", 100)
+	pair.SetupPair(sourceName, "constant", "BUSD", "USD", 100)
 	pair.Update(sourceName, constantPriceOne)
 	pair1 := _o.GetNewPair("USDC", "USD")
-	pair1.SetupPairAtOneSource(sourceName, "constant", "USDC", "USD", 100)
+	pair1.SetupPair(sourceName, "constant", "USDC", "USD", 100)
 	pair1.Update(sourceName, constantPriceOne)
 	// for avalanche native USDCe and USDTe (Bridged Coins from ETH)
 	pair2 := _o.GetNewPair("USDCe", "USD")
-	pair2.SetupPairAtOneSource(sourceName, "constant", "USDCe", "USD", 100)
+	pair2.SetupPair(sourceName, "constant", "USDCe", "USD", 100)
 	pair2.Update(sourceName, constantPriceOne)
 	pair3 := _o.GetNewPair("USDTe", "USDT")
-	pair3.SetupPairAtOneSource(sourceName, "constant", "USDTe", "USDT", 100)
+	pair3.SetupPair(sourceName, "constant", "USDTe", "USDT", 100)
 	pair3.Update(sourceName, constantPriceOne)
 }
 
