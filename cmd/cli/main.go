@@ -24,6 +24,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/hashwavelab/rainbowmist/client"
 	"github.com/hashwavelab/rainbowmist/pb"
 
 	"google.golang.org/grpc"
@@ -35,7 +36,7 @@ const (
 )
 
 func main() {
-	f2()
+	f3()
 }
 
 func f1() {
@@ -74,5 +75,15 @@ func f2() {
 	if err != nil {
 		log.Fatalf("could not greet: %v", err)
 	}
-	log.Printf("Received Reserve: %s", r)
+	log.Printf("Received: %s", r)
+}
+
+func f3() {
+	oracle := client.NewOracle(address)
+	oracle.AddUSDWatchPair("BNB")
+	oracle.StartSyncing()
+	for i := 0; i < 100; i++ {
+		log.Println(oracle.GetUSDPrice("BNB"))
+		time.Sleep(3 * time.Second)
+	}
 }

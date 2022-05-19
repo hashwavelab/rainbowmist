@@ -2,6 +2,7 @@ package client
 
 import (
 	"context"
+	"log"
 	sync "sync"
 	"time"
 
@@ -13,13 +14,13 @@ import (
 )
 
 var (
-	RPCTimeout               = time.Second * 2
+	RPCTimeout               = time.Second * 1
 	SyncInterval             = time.Second * 2
-	TimeAllowedSinceLastSync = time.Second * 15
+	TimeAllowedSinceLastSync = time.Second * 5
 )
 
 type Oracle struct {
-	address           string
+	cli               pb.RainbowmistClient
 	USDQuoteWatchList sync.Map //map[string]*USDQuote
 }
 
@@ -31,8 +32,12 @@ type USDQuote struct {
 }
 
 func NewOracle(address string) *Oracle {
+	conn, err := grpc.Dial(address, grpc.WithTransportCredentials(insecure.NewCredentials()))
+	if err != nil {
+		log.Fatal("grpc dial failed:", err)
+	}
 	oracle := &Oracle{
-		address: address,
+		cli: pb.NewRainbowmistClient(conn),
 	}
 	return oracle
 }
@@ -64,30 +69,18 @@ func (_o *Oracle) syncWatchList() {
 	wg.Wait()
 }
 
-func (_o *Oracle) connect() (*grpc.ClientConn, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), RPCTimeout)
-	defer cancel()
-	conn, err := grpc.DialContext(ctx, _o.address, grpc.WithTransportCredentials(insecure.NewCredentials()), grpc.WithBlock())
-	return conn, err
-}
-
 func (_o *Oracle) syncPrice(q *USDQuote, wg *sync.WaitGroup) {
 	defer wg.Done()
-	conn, err := _o.connect()
-	if err != nil {
-		return
-	}
-	defer conn.Close()
-	c := pb.NewRainbowmistClient(conn)
 	ctx, cancel := context.WithTimeout(context.Background(), RPCTimeout)
 	defer cancel()
-	r, err := c.GetUSDPrice(ctx, &pb.GetUSDPriceRequest{
+	r, err := _o.cli.GetUSDPrice(ctx, &pb.GetUSDPriceRequest{
 		Asset: q.Asset,
 	})
 	if err != nil {
+		q.setError()
 		return
 	}
-	q.SetPrice(r.Price)
+	q.setPrice(r.Price)
 }
 
 func (_o *Oracle) GetUSDPrice(a string) (float64, bool) {
@@ -96,7 +89,7 @@ func (_o *Oracle) GetUSDPrice(a string) (float64, bool) {
 		return 0, false
 	}
 	quote := q.(*USDQuote)
-	return quote.GetPrice()
+	return quote.getPrice()
 }
 
 func (_o *Oracle) GetUSDPriceFunc(a string) (func() (float64, bool), bool) {
@@ -105,10 +98,10 @@ func (_o *Oracle) GetUSDPriceFunc(a string) (func() (float64, bool), bool) {
 		return nil, false
 	}
 	quote := q.(*USDQuote)
-	return quote.GetPrice, true
+	return quote.getPrice, true
 }
 
-func (_q *USDQuote) GetPrice() (float64, bool) {
+func (_q *USDQuote) getPrice() (float64, bool) {
 	_q.RLock()
 	defer _q.RUnlock()
 	if time.Since(_q.LastSync) <= TimeAllowedSinceLastSync {
@@ -118,7 +111,13 @@ func (_q *USDQuote) GetPrice() (float64, bool) {
 	}
 }
 
-func (_q *USDQuote) SetPrice(price float64) {
+func (_q *USDQuote) setError() {
+	_q.Lock()
+	defer _q.Unlock()
+	_q.LastSync = time.Time{}
+}
+
+func (_q *USDQuote) setPrice(price float64) {
 	_q.Lock()
 	defer _q.Unlock()
 	ok := pix.PriceSenseCheck(price)
